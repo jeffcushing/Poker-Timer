@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "poker-timer",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8000", "--directory", "/Users/jeffc/Documents/ApertureInsights/Claude/Poker Timer"],
+      "port": 8000
+    }
+  ]
+}

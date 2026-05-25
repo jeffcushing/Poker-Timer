@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Poker Timer</title>
+<style>
+:root[data-theme="dark"] {
+  --bg: #0b1a0b;
+  --surface: #152015;
+  --card: #1c2d1c;
+  --border: #2a402a;
+  --gold: #d4af37;
+  --gold-light: #f0d060;
+  --gold-dim: #9a7e26;
+  --text: #e8e8d0;
+  --muted: #7a9a7a;
+  --red: #c0392b;
+  --green-btn: #27ae60;
+  --orange: #e67e22;
+}
+
+:root[data-theme="light"] {
+  --bg: #f5f4ef;
+  --surface: #ffffff;
+  --card: #f0ede4;
+  --border: #d9d6cc;
+  --gold: #1f7a3a;
+  --gold-light: #27a34d;
+  --gold-dim: #16602c;
+  --text: #1f2a23;
+  --muted: #6a6f68;
+  --red: #c0392b;
+  --green-btn: #1a6b35;
+  --orange: #d97e3a;
+}
+
+:root {
+  --bg: #0b1a0b;
+  --surface: #152015;
+  --card: #1c2d1c;
+  --border: #2a402a;
+  --gold: #d4af37;
+  --gold-light: #f0d060;
+  --gold-dim: #9a7e26;
+  --text: #e8e8d0;
+  --muted: #7a9a7a;
+  --red: #c0392b;
+  --green-btn: #27ae60;
+  --orange: #e67e22;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Georgia, 'Times New Roman', serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+#app { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+
+h1 {
+  text-align: center;
+  color: var(--gold);
+  font-size: 1.9em;
+  letter-spacing: 4px;
+  text-shadow: 0 0 24px rgba(212,175,55,0.45);
+  margin-bottom: 22px;
+  font-weight: normal;
+}
+
+/* ── TABS ── */
+.tabs { display: flex; border-bottom: 2px solid var(--gold-dim); margin-bottom: 26px; }
+.tab-btn {
+  padding: 10px 30px; background: transparent; border: none;
+  color: var(--muted); font-family: Georgia, serif; font-size: 1em;
+  cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
+  letter-spacing: 1px; transition: color 0.2s; user-select: none;
+  -webkit-user-select: none; -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn:active { color: var(--gold); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-content { display: block; }
+.tab-content[hidden] { display: none; }
+
+/* ── FORM ELEMENTS ── */
+.section-title {
+  color: var(--gold); font-size: 0.8em; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 12px;
+  border-bottom: 1px solid var(--border); padding-bottom: 8px;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  color: var(--gold-dim); font-size: 0.78em;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.field input[type="number"], .field input[type="text"] {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text);
+  padding: 8px 10px; font-size: 0.95em; font-family: Georgia, serif;
+  transition: border-color 0.2s;
+}
+.field input:focus { outline: none; border-color: var(--gold-dim); }
+
+.toggle-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.toggle-row > span { color: var(--gold-dim); font-size: 0.78em; letter-spacing: 1px; text-transform: uppercase; }
+
+.switch { position: relative; width: 46px; height: 24px; flex-shrink: 0; }
+.switch input { display: none; }
+.sw-track {
+  position: absolute; inset: 0; background: var(--card);
+  border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: 0.2s;
+}
+.sw-track::after {
+  content: ''; position: absolute; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--muted); top: 2px; left: 2px; transition: 0.2s;
+}
+.switch input:checked + .sw-track { background: var(--green-btn); border-color: var(--green-btn); }
+.switch input:checked + .sw-track::after { transform: translateX(22px); background: #fff; }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 8px 18px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--card); color: var(--text); cursor: pointer;
+  font-family: Georgia, serif; font-size: 0.88em; letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+.btn-gold { background: var(--gold); color: #000; border-color: var(--gold); font-weight: bold; }
+.btn-gold:hover { background: var(--gold-light); color: #000; border-color: var(--gold-light); }
+.btn-danger { background: #5a1010; border-color: #8a2020; color: #f08080; }
+.btn-danger:hover { background: #7a1515; border-color: var(--red); color: #ffaaaa; }
+
+/* ── BLIND TABLE ── */
+.blind-table { width: 100%; border-collapse: collapse; font-size: 0.88em; margin-bottom: 14px; }
+.blind-table th {
+  background: var(--card); color: var(--gold-dim); padding: 9px 10px;
+  text-align: left; border: 1px solid var(--border);
+  font-weight: normal; font-size: 0.78em; letter-spacing: 1px; text-transform: uppercase;
+}
+.blind-table td { padding: 7px 10px; border: 1px solid var(--border); background: var(--surface); }
+.blind-table tr.break-row td {
+  background: var(--card); color: var(--gold-dim);
+  font-style: italic; text-align: center;
+}
+.blind-table input[type="number"] {
+  background: transparent; border: none; color: var(--text);
+  font-family: Georgia, serif; font-size: 0.95em; width: 90px; padding: 2px 4px;
+}
+.blind-table input[type="number"]:focus { outline: 1px solid var(--gold-dim); border-radius: 2px; }
+.blind-table .del-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--border); font-size: 1em; padding: 2px 6px;
+  transition: color 0.2s;
+}
+.blind-table .del-btn:hover { color: var(--red); }
+.table-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── CHIP CONFIG ── */
+.chip-cfg-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+}
+.swatch { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.25); }
+.chip-cfg-row label { color: var(--muted); font-size: 0.78em; letter-spacing: 1px; text-transform: uppercase; }
+.chip-cfg-row input[type="text"],
+.chip-cfg-row input[type="number"] {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--text); padding: 5px 8px;
+  font-family: Georgia, serif; font-size: 0.88em;
+}
+.chip-cfg-row input[type="text"] { width: 80px; }
+.chip-cfg-row input[type="number"] { width: 60px; }
+.chip-cfg-row input[type="color"] {
+  width: 38px; height: 28px; border: 1px solid var(--border);
+  border-radius: 3px; cursor: pointer; background: none; padding: 1px;
+}
+
+/* ── CHIP STACKS ── */
+.chips-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; padding: 10px 0 20px; }
+.chip-col { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 80px; }
+.chip-col-label { color: var(--gold-dim); font-size: 0.78em; letter-spacing: 1px; text-transform: uppercase; }
+.chip-count-input {
+  width: 64px; text-align: center; background: var(--card);
+  border: 1px solid var(--border); border-radius: 4px;
+  color: var(--gold); font-size: 1.3em; font-weight: bold;
+  font-family: Georgia, serif; padding: 3px 4px;
+  -moz-appearance: textfield;
+}
+.chip-count-input::-webkit-outer-spin-button,
+.chip-count-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.chip-count-input:focus { outline: none; border-color: var(--gold-dim); }
+.chip-subtotal { color: var(--muted); font-size: 0.78em; }
+input[type="range"].chip-slider { width: 80px; accent-color: var(--gold); cursor: pointer; }
+
+.chip-total-bar {
+  text-align: center; padding: 10px; font-size: 0.88em;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--card); margin-bottom: 20px;
+}
+.chip-total-bar .ok { color: var(--green-btn); }
+.chip-total-bar .bad { color: var(--red); }
+
+/* ── TIMER ── */
+#timer-display { text-align: center; }
+
+.level-badge {
+  display: inline-block; padding: 4px 16px;
+  border: 1px solid var(--gold-dim); border-radius: 20px;
+  color: var(--gold-dim); font-size: 0.75em; letter-spacing: 2px;
+  text-transform: uppercase; flex-shrink: 0;
+}
+
+.blind-level-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 0;
+}
+
+.blind-display { display: flex; justify-content: center; gap: 50px; }
+.blind-card { text-align: center; }
+.blind-label { color: var(--muted); font-size: 0.75em; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.blind-value { color: var(--gold); font-size: 2.8em; font-weight: bold; text-shadow: 0 0 20px rgba(212,175,55,0.4); line-height: 1; }
+
+.timer-hourglass-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+@media (min-width: 860px) {
+  .timer-hourglass-wrapper {
+    gap: 20px;
+    margin-bottom: 16px;
+  }
+}
+
+.timer-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.timer-core {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+@media (min-width: 860px) {
+  .timer-core { margin-bottom: 8px; }
+}
+
+.countdown {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 7.5em; font-weight: bold; color: var(--text);
+  letter-spacing: 2px; min-width: 280px; text-align: center;
+  text-shadow: 0 0 30px rgba(255,255,255,0.15); line-height: 1;
+}
+.countdown.warn { color: #e74c3c; text-shadow: 0 0 24px rgba(231,76,60,0.5); animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.65; } }
+
+.prog-wrap { width: 100%; max-width: 440px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 8px auto 0; }
+.prog-bar { height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold-light)); border-radius: 3px; transition: width 0.9s linear; }
+
+.hourglass-svg {
+  width: 70px;
+  height: 110px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+@media (min-width: 860px) {
+  .hourglass-svg {
+    width: 120px;
+    height: auto;
+    min-height: 380px;
+    align-self: stretch;
+    margin-left: 0;
+  }
+}
+
+:root[data-theme="light"] .hourglass-svg polygon:last-of-type {
+  stroke: var(--gold) !important;
+}
+
+.timer-controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 0; margin-top: 0; }
+.btn-lg { padding: 8px 18px; font-size: 0.85em; letter-spacing: 1px; border-radius: 4px; }
+.btn-start-t { background: var(--green-btn); border-color: var(--green-btn); color: #fff; }
+.btn-start-t:hover { background: #2ecc71; color: #fff; border-color: #2ecc71; }
+.btn-pause-t { background: var(--orange); border-color: var(--orange); color: #fff; }
+.btn-pause-t:hover { background: #f39c12; color: #fff; border-color: #f39c12; }
+.btn-end-t { background: #6a1010; border-color: #922020; color: #ffaaaa; }
+.btn-end-t:hover { background: #8a1a1a; border-color: var(--red); }
+
+.vol-row { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 0.8em; margin-bottom: 12px; }
+.vol-row input { width: 100px; accent-color: var(--gold); }
+
+.break-card {
+  background: linear-gradient(135deg, var(--card), #1a2a3a);
+  border: 2px solid var(--gold-dim); border-radius: 8px;
+  padding: 20px; margin-bottom: 18px; display: none;
+}
+.break-card h2 { color: var(--gold); letter-spacing: 3px; font-size: 1.3em; margin-bottom: 6px; font-weight: normal; }
+.break-card p { color: var(--muted); font-size: 0.9em; }
+
+.chip-reminder {
+  display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+  padding: 10px 12px; margin-bottom: 4px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 4px;
+}
+.chip-reminder-label { color: var(--gold-dim); font-size: 0.75em; letter-spacing: 1px; text-transform: uppercase; margin-right: 6px; align-self: center; }
+.chip-chip {
+  width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75em; font-weight: bold; transition: opacity 0.3s;
+  position: relative;
+}
+.chip-chip.inactive { opacity: 0.18; }
+.chip-chip.colorup-now {
+  border: 2.5px solid #f0c000 !important;
+  animation: colorup-pulse 1s ease-in-out infinite;
+}
+@keyframes colorup-pulse {
+  0%, 100% { box-shadow: 0 0 6px 3px rgba(240,192,0,0.85); }
+  50%       { box-shadow: 0 0 14px 7px rgba(240,192,0,0.45); }
+}
+.chip-colorup-tag {
+  position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%);
+  background: #c8a000; color: #000; font-size: 0.52em; font-weight: bold;
+  padding: 1px 3px; border-radius: 2px; white-space: nowrap; letter-spacing: 0;
+}
+.chip-chip-label { display: block; font-size: 0.65em; color: rgba(0,0,0,0.5); margin-top: 2px; text-align: center; }
+
+.timer-bottom-row { display: flex; gap: 26px; margin-top: 14px; justify-content: center; }
+.timer-schedule { flex: 0 1 auto; }
+.poker-hands { flex: 0 1 auto; }
+.poker-hands-title { color: var(--gold-dim); letter-spacing: 1px; font-size: 0.75em; text-transform: uppercase; margin-bottom: 6px; }
+.poker-hand-grid { display: grid; grid-template-columns: 1fr; gap: 5px; font-size: 0.7em; }
+.poker-hand { display: flex; gap: 6px; padding: 5px 6px; background: var(--card); border: 1px solid var(--border); border-radius: 3px; align-items: center; }
+.poker-cards { display: flex; gap: 1px; }
+.poker-card { width: 16px; height: 22px; background: white; border: 1px solid #333; border-radius: 1px; display: flex; align-items: center; justify-content: center; font-size: 0.5em; font-weight: bold; color: #333; position: relative; overflow: hidden; }
+.poker-card.spade::after, .poker-card.club::after { content: '♠'; color: black; }
+.poker-card.heart::after, .poker-card.diamond::after { content: '♥'; color: #c0392b; }
+.poker-card.diamond::after { content: '♦'; }
+.poker-card.red { color: #c0392b; }
+.poker-hand-info { flex: 1; }
+.poker-hand-name { color: var(--gold); font-weight: bold; margin-bottom: 1px; }
+.poker-hand-desc { color: var(--muted); font-size: 0.8em; }
+
+.sched-preview { font-size: 0.8em; }
+.sched-preview-title { color: var(--gold-dim); letter-spacing: 1px; font-size: 0.8em; text-transform: uppercase; margin-bottom: 6px; }
+.sched-table { margin: 0 auto; border-collapse: collapse; }
+.sched-table td { padding: 4px 12px; border-bottom: 1px solid var(--border); }
+.sched-table tr.cur td { color: var(--gold); font-weight: bold; }
+.sched-table tr.past td { color: var(--border); cursor: pointer; }
+.sched-table tr.future td { color: var(--muted); cursor: pointer; }
+.sched-table tr.past:hover td { color: var(--muted); }
+.sched-table tr.future:hover td { color: var(--gold-dim); }
+
+.done-screen { text-align: center; padding: 60px 20px; }
+.done-screen h2 { color: var(--gold); font-size: 1.5em; letter-spacing: 3px; margin-bottom: 12px; font-weight: normal; }
+.done-screen p { color: var(--muted); margin-bottom: 30px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: #000; padding: 10px 24px; border-radius: 6px;
+  font-weight: bold; font-size: 0.88em; z-index: 999;
+  opacity: 0; transition: opacity 0.25s; pointer-events: none; letter-spacing: 1px;
+}
+.toast.show { opacity: 1; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .timer-bottom-row { flex-direction: column; gap: 20px; }
+}
+@media (max-width: 580px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .countdown { font-size: 4.5em; }
+  .blind-value { font-size: 2em; }
+  .timer-core { flex-direction: column; gap: 16px; }
+  .hourglass-svg { width: 80px; height: 144px; }
+  .timer-bottom-row { flex-direction: column; gap: 20px; }
+  .chip-reminder { flex-wrap: wrap; gap: 6px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1 style="margin: 0;">&#9824; POKER TIMER &#9829;</h1>
+    <button id="theme-toggle" class="btn" style="white-space: nowrap;">☀ Light</button>
+  </div>
+
+  <nav class="tabs">
+    <button id="tab-btn-settings" class="tab-btn active" onclick="switchTab('settings')">Settings</button>
+    <button id="tab-btn-chips" class="tab-btn" onclick="switchTab('chips')">Chip Stacks</button>
+    <button id="tab-btn-timer" class="tab-btn" onclick="switchTab('timer')">Timer</button>
+  </nav>
+
+  <!-- ══════════════ SETTINGS TAB ══════════════ -->
+  <div id="tab-settings" class="tab-content">
+    <div class="grid-2">
+      <div class="field">
+        <label>Starting Chips (per player)</label>
+        <input type="number" id="s-chips" value="2000" min="100" step="100" onchange="onSettingInput()">
+      </div>
+      <div class="field">
+        <label>Smallest Chip Denomination</label>
+        <input type="number" id="s-smallest" value="10" min="1" onchange="onSettingInput()">
+      </div>
+      <div class="field">
+        <label>Round Length (minutes)</label>
+        <input type="number" id="s-roundlen" value="20" min="1" max="120" onchange="onSettingInput()">
+      </div>
+      <div class="field">
+        <label>Starting Small Blind</label>
+        <input type="number" id="s-startblind" value="10" min="1" onchange="onSettingInput()">
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <span>Breaks</span>
+      <label class="switch">
+        <input type="checkbox" id="s-breaks" checked onchange="onBreakToggle()">
+        <span class="sw-track"></span>
+      </label>
+    </div>
+
+    <div id="break-sub" class="grid-2" style="padding-left:16px; margin-bottom:20px;">
+      <div class="field">
+        <label>Break after every (rounds)</label>
+        <input type="number" id="s-breakevery" value="4" min="1" onchange="onSettingInput()">
+      </div>
+      <div class="field">
+        <label>Break length (minutes)</label>
+        <input type="number" id="s-breaklen" value="5" min="1" onchange="onSettingInput()">
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <span>Color Up Auto-Pause</span>
+      <label class="switch">
+        <input type="checkbox" id="s-colorup" checked onchange="S.colorUpPauseOn=this.checked">
+        <span class="sw-track"></span>
+      </label>
+      <span style="color:var(--muted);font-size:0.78em;margin-left:4px;">— pause &amp; alarm when chips color up</span>
+    </div>
+
+    <div class="section-title">Blind Structure</div>
+    <table class="blind-table">
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Small Blind</th>
+          <th>Big Blind</th>
+          <th>Round Length (min)</th>
+          <th>Start Time</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="blind-tbody"></tbody>
+    </table>
+    <div class="table-actions">
+      <button class="btn" onclick="addBlindLevel()">+ Level</button>
+      <button class="btn" onclick="addBlindBreak()">+ Break</button>
+      <button class="btn" onclick="regenerateBlinds()">&#8635; Regenerate</button>
+      <button class="btn btn-gold" onclick="saveAll()">&#10003; Save</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ CHIP STACKS TAB ══════════════ -->
+  <div id="tab-chips" class="tab-content" hidden>
+    <div class="section-title">Chip Colors &amp; Values</div>
+    <div id="chip-cfg"></div>
+    <div style="margin: 14px 0;">
+      <button class="btn" onclick="saveAll()">&#10003; Save</button>
+    </div>
+
+    <div class="section-title" style="margin-top:24px; display:flex; justify-content:space-between; align-items:center;">
+      <span>Chip Allocation per Player</span>
+      <button class="btn" onclick="resetToOptimal()" style="font-size:0.8em; padding:5px 12px;">&#8635; Reset to Optimal</button>
+    </div>
+    <div class="chip-total-bar" id="chip-total-bar">—</div>
+    <div class="chips-row" id="chips-row"></div>
+  </div>
+
+  <!-- ══════════════ TIMER TAB ══════════════ -->
+  <div id="tab-timer" class="tab-content" hidden>
+    <div id="timer-ready" style="text-align:center; padding:60px 20px;">
+      <div style="color:var(--muted); margin-bottom:28px; letter-spacing:1px;">Ready to start the tournament</div>
+      <button class="btn btn-lg btn-start-t" onclick="startTimer()">&#9654; START</button>
+    </div>
+
+    <div id="timer-active" style="display:none;">
+      <div class="break-card" id="break-card">
+        <h2>&#9749; BREAK TIME</h2>
+        <p id="break-msg"></p>
+      </div>
+
+      <!-- TIMER & HOURGLASS: LEFT COLUMN + RIGHT HOURGLASS -->
+      <div class="timer-hourglass-wrapper">
+        <!-- LEFT COLUMN: Timer, Level/Blinds, Chips -->
+        <div class="timer-left-column">
+          <!-- TIMER COUNTDOWN -->
+          <div class="timer-core">
+            <div style="text-align: center;">
+              <div class="countdown" id="countdown">20:00</div>
+              <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:100%"></div></div>
+            </div>
+          </div>
+
+          <!-- LEVEL & BLINDS -->
+          <div class="blind-level-row">
+            <div class="level-badge" id="level-badge">LEVEL 1</div>
+            <div class="blind-display" id="blind-display">
+              <div class="blind-card">
+                <div class="blind-label">Small Blind</div>
+                <div class="blind-value" id="t-sb">—</div>
+              </div>
+              <div class="blind-card">
+                <div class="blind-label">Big Blind</div>
+                <div class="blind-value" id="t-bb">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIVE CHIPS -->
+          <div class="chip-reminder" id="chip-reminder"></div>
+
+          <!-- CONTROL BUTTONS -->
+          <div class="timer-controls">
+            <button class="btn btn-lg btn-pause-t" id="btn-pause" onclick="togglePause()">⏸ PAUSE</button>
+            <button class="btn btn-lg" onclick="prevLevel()">◀ PREV</button>
+            <button class="btn btn-lg" onclick="skipLevel()">▶ SKIP</button>
+            <button class="btn btn-lg btn-end-t" onclick="endTournament()">■ END</button>
+          </div>
+        </div>
+
+        <!-- RIGHT: HOURGLASS (spans full height) -->
+        <svg class="hourglass-svg" id="hourglass" viewBox="0 0 90 144" xmlns="http://www.w3.org/2000/svg">
+          <polygon id="hg-top" points="5,5 85,5 45,72" fill="#d4af37" opacity="0.85"/>
+          <polygon id="hg-bot" points="5,139 85,139 85,139 5,139" fill="#d4af37" opacity="0.6"/>
+          <line id="hg-stream" x1="45" y1="72" x2="45" y2="73" stroke="#d4af37" stroke-width="2" opacity="0"/>
+          <polygon points="5,5 85,5 45,72 85,139 5,139 45,72"
+                   fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <!-- SCHEDULE & HAND RANKINGS -->
+      <div class="timer-bottom-row">
+        <div class="timer-schedule sched-preview">
+          <div class="sched-preview-title">Schedule <span style="color:var(--border);font-size:0.85em;letter-spacing:0;">— click to jump</span></div>
+          <table class="sched-table" style="font-size:0.75em;"><tbody id="sched-tbody"></tbody></table>
+        </div>
+        <div class="poker-hands">
+          <div class="poker-hands-title">Hand Rankings</div>
+          <div class="poker-hand-grid">
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card spade">A</div><div class="poker-card spade">K</div><div class="poker-card spade">Q</div><div class="poker-card spade">J</div><div class="poker-card spade">10</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">ROYAL FLUSH</div>
+                <div class="poker-hand-desc">Ace-King-Queen-Jack-Ten, same suit</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card spade">J</div><div class="poker-card spade">10</div><div class="poker-card spade">9</div><div class="poker-card spade">8</div><div class="poker-card spade">7</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">STRAIGHT FLUSH</div>
+                <div class="poker-hand-desc">Five consecutive, same suit</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card heart">K</div><div class="poker-card spade">K</div><div class="poker-card diamond">K</div><div class="poker-card spade">K</div><div class="poker-card red" style="background:#ffcccc;">⬚</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">FOUR OF A KIND</div>
+                <div class="poker-hand-desc">Four cards of same rank</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card heart">A</div><div class="poker-card spade">A</div><div class="poker-card diamond">A</div><div class="poker-card heart">9</div><div class="poker-card heart">9</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">FULL HOUSE</div>
+                <div class="poker-hand-desc">Three of a kind + pair</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card spade">K</div><div class="poker-card spade">J</div><div class="poker-card spade">8</div><div class="poker-card spade">7</div><div class="poker-card spade">5</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">FLUSH</div>
+                <div class="poker-hand-desc">Five cards of same suit</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card heart">J</div><div class="poker-card spade">10</div><div class="poker-card diamond">9</div><div class="poker-card spade">8</div><div class="poker-card heart">7</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">STRAIGHT</div>
+                <div class="poker-hand-desc">Five consecutive ranks</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card heart">K</div><div class="poker-card spade">K</div><div class="poker-card diamond">K</div><div class="poker-card red" style="background:#ffcccc;">⬚</div><div class="poker-card red" style="background:#ffcccc;">⬚</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">THREE OF A KIND</div>
+                <div class="poker-hand-desc">Three cards of same rank</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card heart">A</div><div class="poker-card spade">A</div><div class="poker-card heart">9</div><div class="poker-card spade">9</div><div class="poker-card red" style="background:#ffcccc;">⬚</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">TWO PAIR</div>
+                <div class="poker-hand-desc">Two different pairs</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card heart">K</div><div class="poker-card spade">K</div><div class="poker-card red" style="background:#ffcccc;">⬚</div><div class="poker-card red" style="background:#ffcccc;">⬚</div><div class="poker-card red" style="background:#ffcccc;">⬚</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">ONE PAIR</div>
+                <div class="poker-hand-desc">Two cards of same rank</div>
+              </div>
+            </div>
+            <div class="poker-hand">
+              <div class="poker-cards">
+                <div class="poker-card heart">A</div><div class="poker-card red" style="background:#ffcccc;">⬚</div><div class="poker-card red" style="background:#ffcccc;">⬚</div><div class="poker-card red" style="background:#ffcccc;">⬚</div><div class="poker-card red" style="background:#ffcccc;">⬚</div>
+              </div>
+              <div class="poker-hand-info">
+                <div class="poker-hand-name">HIGH CARD</div>
+                <div class="poker-hand-desc">No pairs, highest card plays</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vol-row" style="margin-top: 18px; margin-bottom: 0;">
+        <span>🔈</span>
+        <input type="range" id="vol" min="0" max="1" step="0.05" value="0.7">
+        <span>🔊</span>
+        <span id="vol-label" style="min-width:30px;">70%</span>
+      </div>
+    </div>
+
+    <div id="timer-done" style="display:none;">
+      <div class="done-screen">
+        <h2>&#9733; TOURNAMENT COMPLETE &#9733;</h2>
+        <p>Thanks for playing!</p>
+        <button class="btn btn-lg btn-gold" onclick="resetTimer()">&#8635; New Tournament</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div style="position:fixed;bottom:4px;right:8px;color:#2a402a;font-size:9px;pointer-events:none;z-index:1;">v10</div>
+
+<script>
+// v10 - 2026-05-08
+// IMPROVED: Timer font size 7.5em, hourglass right of timer on desktop, larger (140x340)
+// PREVIOUS: Timer tab reordered (timer/hourglass at top), per-level round length overrides
+window.onerror = function(msg, src, line) {
+  var d = document.getElementById('js-error-banner');
+  if (!d) { d = document.createElement('div'); d.id='js-error-banner'; d.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#c0392b;color:#fff;padding:8px 12px;z-index:9999;font-size:11px;font-family:monospace;'; document.body.appendChild(d); }
+  d.textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
+};
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+const DEFAULT_STATE = {
+  players: 8,
+  startingChips: 2000,
+  smallestDenom: 10,
+  roundLength: 20,
+  startBlind: 10,
+  breaksOn: true,
+  breakEvery: 5,
+  breakLength: 8,
+  colorUpPauseOn: true,
+  schedule: [],   // [{type:'level', level:N, sb:X, bb:Y, startMin:M} | {type:'break', duration:M, startMin:M}]
+  chips: [
+    { name:'White', color:'#d0d0d0', value:10,   count:20, on:true, fixed:true },
+    { name:'Red',   color:'#c0392b', value:25,   count:12, on:true, fixed:true },
+    { name:'Blue',  color:'#2471a3', value:100,  count:5,  on:true, fixed:true },
+    { name:'Green', color:'#1e8449', value:250,  count:0,  on:false, fixed:true },
+    { name:'Black', color:'#2c2c2c', value:500,  count:2,  on:true, fixed:true },
+  ]
+};
+
+let S = deepClone(DEFAULT_STATE);
+
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+// ═══════════════════════════════════════════════════════
+//  PERSISTENCE
+// ═══════════════════════════════════════════════════════
+function saveAll() {
+  readSettingsFromDOM();
+  localStorage.setItem('pt_v2', JSON.stringify(S));
+  toast('Settings saved');
+}
+
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem('pt_v2');
+    if (raw) S = { ...deepClone(DEFAULT_STATE), ...JSON.parse(raw) };
+  } catch(e) { /* use defaults */ }
+}
+
+// ═══════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════
+function switchTab(name) {
+  var tabs = ['settings', 'chips', 'timer'];
+  for (var i = 0; i < tabs.length; i++) {
+    var t = tabs[i];
+    var content = document.getElementById('tab-' + t);
+    var btn = document.getElementById('tab-btn-' + t);
+    if (content) content.hidden = (t !== name);
+    if (btn) btn.className = 'tab-btn' + (t === name ? ' active' : '');
+  }
+  if (name === 'chips') { renderChipCfg(); renderChipStacks(); }
+  if (name === 'timer') renderSchedPreview();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════
+function readSettingsFromDOM() {
+  S.startingChips  = +$('s-chips').value      || 2000;
+  S.smallestDenom  = +$('s-smallest').value   || 10;
+  S.roundLength    = +$('s-roundlen').value   || 20;
+  S.startBlind     = +$('s-startblind').value || 10;
+  S.breaksOn       = $('s-breaks').checked;
+  S.breakEvery     = +$('s-breakevery').value || 5;
+  S.breakLength    = +$('s-breaklen').value   || 8;
+  S.colorUpPauseOn = $('s-colorup').checked;
+}
+
+function syncDOM() {
+  $('s-chips').value      = S.startingChips;
+  $('s-smallest').value   = S.smallestDenom;
+  $('s-roundlen').value   = S.roundLength;
+  $('s-startblind').value = S.startBlind;
+  $('s-breaks').checked   = S.breaksOn;
+  $('s-breakevery').value = S.breakEvery;
+  $('s-breaklen').value   = S.breakLength;
+  $('s-colorup').checked  = S.colorUpPauseOn !== false;
+  $('break-sub').style.display = S.breaksOn ? '' : 'none';
+}
+
+function onSettingInput() {
+  readSettingsFromDOM();
+  recalcStartTimes();
+  renderBlindTable();
+}
+
+function onBreakToggle() {
+  S.breaksOn = $('s-breaks').checked;
+  $('break-sub').style.display = S.breaksOn ? '' : 'none';
+  // Regenerate schedule to add or remove breaks
+  S.schedule = generateBlinds();
+  renderBlindTable();
+}
+
+// ═══════════════════════════════════════════════════════
+//  BLIND SCHEDULE
+// ═══════════════════════════════════════════════════════
+function generateBlinds() {
+  // Default blind schedule matching standard tournament progression
+  const sbVals = [10, 20, 30, 50, 75, 100, 150, 200, 300, 500, 600, 800, 1000];
+
+  const sched = [];
+  let levelNum = 1, totalMin = 0;
+  for (let i = 0; i < sbVals.length; i++) {
+    if (S.breaksOn && i > 0 && i % S.breakEvery === 0) {
+      sched.push({ type:'break', duration: S.breakLength, startMin: totalMin });
+      totalMin += S.breakLength;
+    }
+    sched.push({ type:'level', level: levelNum++, sb: sbVals[i], bb: sbVals[i]*2, roundLength: S.roundLength, startMin: totalMin });
+    totalMin += S.roundLength;
+  }
+  return sched;
+}
+
+function recalcStartTimes() {
+  let t = 0;
+  S.schedule.forEach(row => {
+    row.startMin = t;
+    if (row.type === 'level') {
+      t += row.roundLength !== undefined ? row.roundLength : S.roundLength;
+    } else {
+      t += row.duration;
+    }
+  });
+}
+
+function renumberLevels() {
+  let n = 1;
+  S.schedule.forEach(r => { if (r.type === 'level') r.level = n++; });
+}
+
+function fmtMin(m) {
+  const h = Math.floor(m / 60), mm = m % 60;
+  return `+${h}:${String(mm).padStart(2,'0')}`;
+}
+
+function mkTd(content, style) {
+  var td = document.createElement('td');
+  if (style) td.style.cssText = style;
+  if (typeof content === 'string') td.textContent = content;
+  else if (content) td.appendChild(content);
+  return td;
+}
+
+function renderBlindTable() {
+  if (!S.schedule || !S.schedule.length) S.schedule = generateBlinds();
+  var tbl = document.getElementById('blind-tbody');
+  if (!tbl) return;
+  while (tbl.rows.length > 0) tbl.deleteRow(0);
+  for (var i = 0; i < S.schedule.length; i++) {
+    var item = S.schedule[i];
+    var tr = tbl.insertRow(-1);
+    if (item.type === 'break') {
+      tr.className = 'break-row';
+      var c0 = tr.insertCell(0); c0.colSpan = 4;
+      c0.textContent = 'Break — ' + item.duration + ' min';
+      var c1 = tr.insertCell(1); c1.textContent = fmtMin(item.startMin);
+      var c2 = tr.insertCell(2);
+      var db = document.createElement('button'); db.className = 'del-btn'; db.textContent = '✕';
+      (function(idx){ db.onclick = function(){ delRow(idx); }; })(i);
+      c2.appendChild(db);
+    } else {
+      var c0 = tr.insertCell(0); c0.textContent = String(item.level);
+      var c1 = tr.insertCell(1);
+      var sbI = document.createElement('input'); sbI.type='number'; sbI.value=item.sb;
+      (function(idx){ sbI.onchange = function(){ S.schedule[idx].sb=+this.value; S.schedule[idx].bb=+this.value*2; renderBlindTable(); }; })(i);
+      c1.appendChild(sbI);
+      var c2 = tr.insertCell(2);
+      var bbI = document.createElement('input'); bbI.type='number'; bbI.value=item.bb;
+      (function(idx){ bbI.onchange = function(){ S.schedule[idx].bb=+this.value; }; })(i);
+      c2.appendChild(bbI);
+      var c3 = tr.insertCell(3);
+      var rlI = document.createElement('input'); rlI.type='number'; rlI.value=item.roundLength || S.roundLength; rlI.min='1';
+      (function(idx){ rlI.onchange = function(){ S.schedule[idx].roundLength=+this.value; recalcStartTimes(); renderBlindTable(); }; })(i);
+      c3.appendChild(rlI);
+      var c4 = tr.insertCell(4); c4.textContent = fmtMin(item.startMin);
+      var c5 = tr.insertCell(5);
+      var db2 = document.createElement('button'); db2.className='del-btn'; db2.textContent='✕';
+      (function(idx){ db2.onclick = function(){ delRow(idx); }; })(i);
+      c5.appendChild(db2);
+    }
+  }
+}
+
+function delRow(i) {
+  S.schedule.splice(i, 1);
+  renumberLevels(); recalcStartTimes(); renderBlindTable();
+}
+
+function addBlindLevel() {
+  const levels = S.schedule.filter(r => r.type === 'level');
+  const last = levels[levels.length - 1];
+  const newSb = last ? last.sb * 2 : S.startBlind;
+  S.schedule.push({ type:'level', level: levels.length + 1, sb: newSb, bb: newSb*2, roundLength: S.roundLength, startMin: 0 });
+  renumberLevels(); recalcStartTimes(); renderBlindTable();
+}
+
+function addBlindBreak() {
+  S.schedule.push({ type:'break', duration: S.breakLength, startMin: 0 });
+  recalcStartTimes(); renderBlindTable();
+}
+
+function regenerateBlinds() {
+  readSettingsFromDOM();
+  S.schedule = generateBlinds();
+  renderBlindTable();
+}
+
+// ═══════════════════════════════════════════════════════
+//  CHIP STACKS
+// ═══════════════════════════════════════════════════════
+function enabledChips() {
+  return [...S.chips].filter(c => c.on).sort((a,b) => a.value - b.value);
+}
+
+function chipTotal() {
+  return enabledChips().reduce((s, c) => s + c.count * c.value, 0);
+}
+
+function renderChipCfg() {
+  const el = $('chip-cfg');
+  el.innerHTML = '';
+  [...S.chips].sort((a,b) => a.value - b.value).forEach(chip => {
+    const idx = S.chips.indexOf(chip);
+    const row = document.createElement('div');
+    row.className = 'chip-cfg-row';
+    const isFixed = chip.fixed;
+    row.innerHTML = `
+      <div class="swatch" style="background:${chip.color};"></div>
+      ${isFixed ? '<label>'+chip.name+'</label>' : '<input type="text" value="'+chip.name+'" onchange="S.chips['+idx+'].name=this.value; renderChipStacks();">'}
+      <label>Value</label>
+      <input type="number" value="${chip.value}" min="1" ${isFixed ? 'disabled' : ''}
+             onchange="S.chips[${idx}].value=+this.value; renderChipCfg(); renderChipStacks();">
+      <label class="switch" title="Enable" style="margin-left: auto;">
+        <input type="checkbox" ${chip.on ? 'checked' : ''}
+               onchange="S.chips[${idx}].on=this.checked; renderChipCfg(); renderChipStacks();">
+        <span class="sw-track"></span>
+      </label>`;
+    el.appendChild(row);
+  });
+  // Add "New Color" button
+  const addBtn = document.createElement('div');
+  addBtn.style.padding = '10px 0';
+  addBtn.innerHTML = '<button class="btn" onclick="openColorPicker()">+ Add Custom Chip Color</button>';
+  el.appendChild(addBtn);
+}
+
+function openColorPicker() {
+  const colors = [
+    {name:'Grey',       hex:'#888888'},
+    {name:'Orange',     hex:'#e67e22'},
+    {name:'Pink',       hex:'#e91e63'},
+    {name:'Purple',     hex:'#9c27b0'},
+    {name:'Yellow',     hex:'#f0c040'},
+    {name:'Light Blue', hex:'#5dade2'},
+    {name:'Brown',      hex:'#8d6e63'}
+  ];
+  const used = S.chips.map(c => c.color.toLowerCase());
+  const available = colors.filter(c => !used.includes(c.hex.toLowerCase()));
+
+  if (!available.length) { toast('No more colors available'); return; }
+
+  const choice = available[0]; // Simple: take first available. User can pick manually if needed.
+  S.chips.push({ name: choice.name, color: choice.hex, value: 100, count: 0, on: false, fixed: false });
+  renderChipCfg(); renderChipStacks();
+  toast('Added ' + choice.name + ' chip');
+}
+
+function delChip(idx) {
+  if (confirm('Remove this chip color?')) {
+    S.chips.splice(idx, 1);
+    renderChipCfg(); renderChipStacks();
+  }
+}
+
+function renderChipStacks() {
+  const chips = enabledChips();
+  const target = S.startingChips;
+  const total = chipTotal();
+  const bar = $('chip-total-bar');
+  const ok = total === target;
+  bar.innerHTML = `Stack total: <span class="${ok?'ok':'bad'}">${total.toLocaleString()}</span> &nbsp;/&nbsp; Target: ${target.toLocaleString()}${ok?' &#10003;':' (adjust sliders to match)'}`;
+
+  const row = $('chips-row');
+  row.innerHTML = '';
+  chips.forEach(chip => {
+    const col = document.createElement('div');
+    col.className = 'chip-col';
+    const maxSlider = Math.floor(target / chip.value);
+
+    col.innerHTML = `
+      <div class="chip-col-label">${chip.name}</div>
+      <canvas width="70" height="120" id="stk-${chip.value}"></canvas>
+      <input type="number" class="chip-count-input" id="cnt-${chip.value}" value="${chip.count}" min="0"
+             onchange="onCountInput(${chip.value}, +this.value)">
+      <div class="chip-subtotal" id="sub-${chip.value}">= ${(chip.count*chip.value).toLocaleString()}</div>
+      <input type="range" class="chip-slider" id="sldr-${chip.value}" min="0" max="${maxSlider}" step="1" value="${chip.count}"
+             oninput="onSlider(${chip.value}, +this.value)">
+      <div style="color:var(--muted);font-size:0.75em;">${chip.value >= 1000 ? (chip.value/1000)+'K' : chip.value} each</div>
+    `;
+    row.appendChild(col);
+    drawStack(chip);
+  });
+}
+
+function drawStack(chip) {
+  const canvas = document.getElementById('stk-' + chip.value);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw top-view chip icon at top
+  const cx = W / 2, cy = 28, r = 22;
+  // Outer ring
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fillStyle = chip.color; ctx.fill();
+  // Stripe pattern (dashed inner ring)
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.72, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2;
+  ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
+  // Label
+  const label = chip.value >= 1000 ? (chip.value/1000)+'K' : chip.value;
+  ctx.fillStyle = contrastColor(chip.color);
+  ctx.font = `bold ${label.length > 2 ? 9 : 11}px Georgia`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, cx, cy);
+
+  // Draw side-view stack below
+  const stackTop = 58;
+  const stackH = H - stackTop - 6;
+  const count = chip.count;
+  if (count === 0) return;
+
+  // Cap drawn chips so chipH never collapses to 0 and the loop stays fast.
+  // If there are more chips than fit at minimum height, we draw fewer and
+  // compress them visually — the numeric input shows the real count.
+  const maxDraw = Math.min(count, Math.floor(stackH / 2));
+  const chipH = Math.max(2, Math.min(9, Math.floor(stackH / Math.max(maxDraw, 1))));
+  const ew = W - 12; // ellipse width
+  const eh = Math.max(0.8, chipH * 0.48);
+
+  for (let i = 0; i < maxDraw; i++) {
+    const y = H - 6 - i * chipH;
+    // Shadow
+    ctx.beginPath();
+    ctx.ellipse(W/2, y + 1, ew/2, eh, 0, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+    // Chip body
+    ctx.beginPath();
+    ctx.ellipse(W/2, y, ew/2, eh, 0, 0, Math.PI*2);
+    ctx.fillStyle = chip.color; ctx.fill();
+    // Highlight
+    ctx.beginPath();
+    ctx.ellipse(W/2, y - eh*0.2, ew/2*0.75, eh*0.28, 0, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fill();
+    // Edge
+    ctx.beginPath();
+    ctx.ellipse(W/2, y, ew/2, eh, 0, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 0.5; ctx.stroke();
+  }
+}
+
+function onSlider(chipValue, newCount) {
+  const chips = enabledChips();
+  const chip = chips.find(c => c.value === chipValue);
+  if (!chip) return;
+  chip.count = newCount;
+  redistributeOthers(chip, chips);
+  refreshChipUI(chips);
+}
+
+function onCountInput(chipValue, newCount) {
+  if (isNaN(newCount) || newCount < 0) return;
+  const chips = enabledChips();
+  const chip = chips.find(c => c.value === chipValue);
+  if (!chip) return;
+  chip.count = newCount;
+  redistributeOthers(chip, chips);
+  refreshChipUI(chips);
+}
+
+function refreshChipUI(chips) {
+  const target = S.startingChips;
+  const total = chips.reduce((s, c) => s + c.count * c.value, 0);
+  const ok = total === target;
+  $('chip-total-bar').innerHTML = `Stack total: <span class="${ok?'ok':'bad'}">${total.toLocaleString()}</span> &nbsp;/&nbsp; Target: ${target.toLocaleString()}${ok?' &#10003;':' (adjust sliders to match)'}`;
+  chips.forEach(chip => {
+    const cntEl  = $('cnt-'  + chip.value);
+    const subEl  = $('sub-'  + chip.value);
+    const sldrEl = $('sldr-' + chip.value);
+    if (cntEl)  cntEl.value       = chip.count;
+    if (subEl)  subEl.textContent = '= ' + (chip.count * chip.value).toLocaleString();
+    if (sldrEl) sldrEl.value      = chip.count;
+    drawStack(chip);
+  });
+}
+
+function optimizeChips() {
+  // Sort chips descending by value; allocate ~50% of remaining to each tier, lowest gets remainder
+  const chips = enabledChips().sort((a, b) => b.value - a.value);
+  const N = chips.length;
+  if (N === 0) return;
+  const target = S.startingChips;
+  let remaining = target;
+  chips.forEach((chip, i) => {
+    if (i < N - 1) {
+      // Take half of what's left, rounded down to a whole-chip multiple
+      const share = Math.floor(remaining * 0.5 / chip.value) * chip.value;
+      chip.count = share / chip.value;
+      remaining -= share;
+    } else {
+      // Lowest chip absorbs whatever's left
+      chip.count = remaining > 0 ? Math.round(remaining / chip.value) : 0;
+    }
+  });
+}
+
+function resetToOptimal() {
+  optimizeChips();
+  renderChipStacks();
+  toast('Reset to optimal allocation');
+}
+
+function redistributeOthers(lockedChip, chips) {
+  // Lock the chip the user just changed, then re-optimise all other enabled chips
+  // so the stack total stays exactly at S.startingChips.
+  // Distribution follows a descending-value approach (each tier ~50% of remaining)
+  // which naturally produces a 4:3:2:1-ish count ratio from low to high denominations.
+  const target = S.startingChips;
+  const lockedValue = lockedChip.count * lockedChip.value;
+  let remaining = target - lockedValue;
+
+  // Sort other chips highest-value first
+  const others = chips
+    .filter(c => c !== lockedChip)
+    .sort((a, b) => b.value - a.value);
+
+  if (others.length === 0) return;
+
+  if (remaining <= 0) {
+    // Locked chip alone meets or exceeds target — zero all others
+    others.forEach(c => c.count = 0);
+    return;
+  }
+
+  others.forEach((chip, i) => {
+    if (i < others.length - 1) {
+      // Each high-value chip takes ~half the remaining budget, rounded to whole chips
+      const share = Math.floor(remaining * 0.5 / chip.value) * chip.value;
+      chip.count = share / chip.value;
+      remaining -= share;
+    } else {
+      // Lowest-value chip absorbs whatever is left (closest whole number)
+      chip.count = Math.round(remaining / chip.value);
+      remaining = 0;
+    }
+  });
+}
+
+function contrastColor(hex) {
+  if (!hex || hex.length < 7) return '#fff';
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.52 ? '#000' : '#fff';
+}
+
+// ═══════════════════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════════════════
+let T = {
+  running: false, paused: false,
+  idx: 0, prevIdx: -1, timeLeft: 0, totalTime: 0,
+  iv: null, audioCtx: null, colorUpMap: null // Built at tournament start
+};
+
+function startTimer() {
+  readSettingsFromDOM();
+  if (!S.schedule.length) S.schedule = generateBlinds();
+  T.idx = 0; T.prevIdx = -1; T.running = true; T.paused = false;
+  T.colorUpMap = buildColorUpMap(); // Build once at start, use throughout tournament
+  show('timer-ready', false); show('timer-done', false); show('timer-active', true);
+  loadLevel();
+  T.iv = setInterval(tick, 1000);
+  renderSchedPreview();
+}
+
+function loadLevel() {
+  const item = S.schedule[T.idx];
+  if (!item) { endTournament(); return; }
+
+  const goingForward = T.idx > T.prevIdx;
+  T.prevIdx = T.idx;
+
+  if (item.type === 'break') {
+    T.totalTime = item.duration * 60;
+    T.timeLeft  = item.duration * 60;
+    $('break-card').style.display = 'block';
+    $('blind-display').style.opacity = '0.25';
+    $('level-badge').textContent = '☕ BREAK';
+    $('break-msg').textContent = `${item.duration} minute break — next blinds incoming`;
+    $('chip-reminder').innerHTML = '';
+  } else {
+    const levelRoundLength = item.roundLength !== undefined ? item.roundLength : S.roundLength;
+    T.totalTime = levelRoundLength * 60;
+    T.timeLeft  = levelRoundLength * 60;
+    $('break-card').style.display = 'none';
+    $('blind-display').style.opacity = '1';
+    $('level-badge').textContent = `LEVEL ${item.level}`;
+    $('t-sb').textContent = item.sb.toLocaleString();
+    $('t-bb').textContent = item.bb.toLocaleString();
+
+    // Color-up detection: chips newly requiring color-up at THIS exact level
+    if (goingForward && T.running && T.colorUpMap) {
+      const newColorUps = enabledChips().filter(c => T.colorUpMap.get(c.value) === T.idx);
+      if (newColorUps.length > 0) {
+        playColorUpAlarm();
+        if (S.colorUpPauseOn) {
+          T.paused = true;
+          updatePauseBtn();
+        }
+        const names = newColorUps.map(c => c.name).join(' + ');
+        toast(`🎰 Color Up: ${names}`);
+      }
+    }
+
+    renderChipReminder(T.idx);
+  }
+  updateDisplay();
+  renderSchedPreview();
+}
+
+function tick() {
+  if (T.paused || !T.running) return;
+  T.timeLeft--;
+  updateDisplay();
+  if (T.timeLeft <= 0) {
+    playAlarm();
+    T.idx++;
+    if (T.idx >= S.schedule.length) { setTimeout(endTournament, 1200); }
+    else { setTimeout(loadLevel, 1200); }
+  }
+}
+
+function updateDisplay() {
+  const m = Math.floor(T.timeLeft / 60);
+  const s = T.timeLeft % 60;
+  $('countdown').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const pct = T.totalTime > 0 ? T.timeLeft / T.totalTime : 0;
+  $('countdown').className = 'countdown' + (pct <= 0.2 || T.timeLeft <= 120 ? ' warn' : '');
+  $('prog-bar').style.width = (pct * 100) + '%';
+  drawHourglass(pct);
+}
+
+function drawHourglass(pctLeft) {
+  // pctLeft: 1=full top, 0=empty top
+  const t = 1 - pctLeft; // progress 0→1
+
+  // TOP sand: triangle whose flat top surface drops from y=5 toward y=72
+  // As sand falls out, the surface level drops and the triangle shrinks
+  const topSurfY = 5 + t * 67;          // surface falls from 5 → 72
+  const topHW    = (1 - t) * 40;        // half-width narrows with the triangle walls
+  $('hg-top').setAttribute('points',
+    topHW > 0.5
+      ? `${45-topHW},${topSurfY} ${45+topHW},${topSurfY} 45,72`
+      : '45,72 45,72 45,72');
+
+  // BOTTOM sand: trapezoid whose flat top surface rises from y=139 toward y=72
+  // Sand piles up from the floor — widest at the base, narrowing as it rises
+  const pileTopY = 139 - t * 67;        // pile surface rises from 139 → 72
+  const pileHW   = 40 * (pileTopY - 72) / 67; // half-width at that y level
+  $('hg-bot').setAttribute('points',
+    t > 0.005
+      ? `${45-pileHW},${pileTopY} ${45+pileHW},${pileTopY} 85,139 5,139`
+      : '5,139 85,139 85,139 5,139');
+
+  // STREAM: thin line from neck to top of pile, visible while sand is flowing
+  const stream = $('hg-stream');
+  const streamEnd = pileTopY - 1;
+  if (t > 0.01 && t < 0.99 && streamEnd > 73) {
+    stream.setAttribute('y2', streamEnd);
+    stream.setAttribute('opacity', '0.7');
+  } else {
+    stream.setAttribute('opacity', '0');
+  }
+}
+
+// Returns Map<chipValue → first schedIdx where chip can be colored up>
+// A chip can be colored up when ALL current + future level blinds
+// are divisible by the next higher chip denomination.
+function buildColorUpMap() {
+  const chips = enabledChips().sort((a, b) => a.value - b.value);
+  const map = new Map();
+  for (let ci = 0; ci < chips.length - 1; ci++) {
+    const chip = chips[ci];
+    const nextDenom = chips[ci + 1].value;
+    // Walk forward through schedule; first level-index where every level
+    // from that point on has sb & bb both divisible by nextDenom
+    for (let si = 0; si < S.schedule.length; si++) {
+      if (S.schedule[si].type !== 'level') continue;
+      const remaining = S.schedule.slice(si).filter(r => r.type === 'level');
+      if (remaining.every(r => r.sb % nextDenom === 0 && r.bb % nextDenom === 0)) {
+        map.set(chip.value, si);
+        break;
+      }
+    }
+  }
+  return map;
+}
+
+function renderChipReminder(schedIdx) {
+  const el = $('chip-reminder');
+  const chips = enabledChips().sort((a, b) => a.value - b.value);
+  const colorUpMap = T.colorUpMap || buildColorUpMap(); // Use stored map or build if not available
+  el.innerHTML = '<span class="chip-reminder-label">Chips:</span>';
+
+  chips.forEach(chip => {
+    const firstUp = colorUpMap.get(chip.value); // undefined = never colors up
+    let state = 'active';
+    if (firstUp !== undefined) {
+      if (firstUp < schedIdx)  state = 'done';      // already colored up
+      else if (firstUp === schedIdx) state = 'now';  // color up happening now
+    }
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;';
+
+    const chipDiv = document.createElement('div');
+    chipDiv.style.backgroundColor = chip.color;
+    chipDiv.style.color = contrastColor(chip.color);
+    const label = chip.value >= 1000 ? (chip.value/1000)+'K' : chip.value;
+    chipDiv.textContent = label;
+
+    if (state === 'done') {
+      chipDiv.className = 'chip-chip inactive';
+      chipDiv.title = 'Colored up — out of play';
+    } else if (state === 'now') {
+      chipDiv.className = 'chip-chip colorup-now';
+      chipDiv.title = 'COLOR UP — exchange these chips now';
+      const tag = document.createElement('div');
+      tag.className = 'chip-colorup-tag';
+      tag.textContent = '↑COLOR UP';
+      chipDiv.appendChild(tag);
+    } else {
+      chipDiv.className = 'chip-chip';
+      chipDiv.title = chip.name;
+    }
+
+    wrap.appendChild(chipDiv);
+    el.appendChild(wrap);
+  });
+}
+
+function updatePauseBtn() {
+  const btn = $('btn-pause');
+  btn.textContent = T.paused ? '▶ RESUME' : '⏸ PAUSE';
+  btn.className   = T.paused ? 'btn btn-lg btn-start-t' : 'btn btn-lg btn-pause-t';
+}
+
+function togglePause() {
+  T.paused = !T.paused;
+
+  // If resuming from color-up pause, immediately remove colored-up chips from play
+  if (!T.paused && T.running && T.colorUpMap) {
+    const schedule = S.schedule[T.idx];
+    if (schedule && schedule.type === 'level') {
+      S.chips.forEach(chip => {
+        if (chip.on && T.colorUpMap.get(chip.value) === T.idx) {
+          chip.on = false; // Disable from play
+        }
+      });
+      renderChipReminder(T.idx); // Refresh display
+    }
+  }
+
+  updatePauseBtn();
+}
+
+function prevLevel() {
+  if (T.idx <= 0) return;
+  T.idx--;
+  loadLevel();
+}
+
+function skipLevel() {
+  T.idx++;
+  if (T.idx >= S.schedule.length) endTournament();
+  else loadLevel();
+}
+
+function jumpToLevel(idx) {
+  if (idx === T.idx) return;
+  T.idx = idx;
+  loadLevel();
+}
+
+function endTournament() {
+  clearInterval(T.iv); T.running = false;
+  show('timer-active', false);
+  show('timer-done', true);
+}
+
+function resetTimer() {
+  T = { running:false, paused:false, idx:0, prevIdx:-1, timeLeft:0, totalTime:0, iv:null, audioCtx:T.audioCtx, colorUpMap:null };
+  show('timer-done', false);
+  show('timer-active', false);
+  show('timer-ready', true);
+}
+
+function renderSchedPreview() {
+  const tbody = $('sched-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  S.schedule.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    const cls = i === T.idx ? 'cur' : i < T.idx ? 'past' : 'future';
+    tr.className = cls;
+    if (item.type === 'break') {
+      tr.innerHTML = `<td colspan="2" style="text-align:center;font-style:italic;">☕ ${item.duration}m</td>`;
+    } else {
+      tr.innerHTML = `<td>L${item.level}</td><td>${item.sb} / ${item.bb}</td>`;
+    }
+    if (cls !== 'cur' && T.running) tr.onclick = () => jumpToLevel(i);
+    tbody.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════════════════════
+function getAudioCtx() {
+  if (!T.audioCtx) T.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return T.audioCtx;
+}
+
+function playAlarm() {
+  try {
+    const ctx = getAudioCtx();
+    const vol = +$('vol').value;
+    // Three ascending beeps
+    [[0, 660], [0.35, 770], [0.7, 880]].forEach(([t, freq]) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      const now = ctx.currentTime;
+      gain.gain.setValueAtTime(0, now + t);
+      gain.gain.linearRampToValueAtTime(vol * 0.55, now + t + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.28);
+      osc.start(now + t); osc.stop(now + t + 0.3);
+    });
+  } catch(e) { /* audio blocked, silent */ }
+}
+
+// Color-up alarm: three descending coin-like tones, then a rising flourish
+function playColorUpAlarm() {
+  try {
+    const ctx = getAudioCtx();
+    const vol = +$('vol').value;
+    // Coin-clink pattern: high → mid → low → pause → rising two
+    const notes = [[0, 1200, 0.12], [0.15, 1000, 0.12], [0.30, 900, 0.12],
+                   [0.55, 880, 0.18], [0.78, 1100, 0.22]];
+    notes.forEach(([t, freq, dur]) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'triangle'; osc.frequency.value = freq;
+      const now = ctx.currentTime;
+      gain.gain.setValueAtTime(0, now + t);
+      gain.gain.linearRampToValueAtTime(vol * 0.5, now + t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + t + dur);
+      osc.start(now + t); osc.stop(now + t + dur + 0.05);
+    });
+  } catch(e) { /* silent */ }
+}
+
+$('vol').addEventListener('input', e => {
+  $('vol-label').textContent = Math.round(e.target.value * 100) + '%';
+});
+
+// ═══════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════
+function $(id) { return document.getElementById(id); }
+function show(id, visible) { $(id).style.display = visible ? '' : 'none'; }
+function toast(msg) {
+  const el = $('toast'); el.textContent = msg;
+  el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+loadSaved();
+if (!S.schedule || !S.schedule.length) S.schedule = generateBlinds();
+syncDOM();
+
+// ═══════════════════════════════════════════════════════
+//  THEME TOGGLE
+// ═══════════════════════════════════════════════════════
+function updateHourglassStroke() {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute('data-theme') || 'dark';
+  const outline = document.querySelector('#hourglass polygon:last-of-type');
+  if (outline) {
+    if (currentTheme === 'light') {
+      outline.setAttribute('stroke', '#1f7a3a');
+    } else {
+      outline.setAttribute('stroke', 'rgba(255,255,255,0.35)');
+    }
+  }
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute('data-theme') || 'dark';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', newTheme);
+  localStorage.setItem('pt_theme', newTheme);
+  updateThemeButton();
+  updateHourglassStroke();
+}
+
+function updateThemeButton() {
+  const html = document.documentElement;
+  const currentTheme = html.getAttribute('data-theme') || 'dark';
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.textContent = currentTheme === 'dark' ? '☀ Light' : '☾ Dark';
+  }
+}
+
+function initTheme() {
+  const html = document.documentElement;
+  const saved = localStorage.getItem('pt_theme') || 'dark';
+  html.setAttribute('data-theme', saved);
+  updateThemeButton();
+  updateHourglassStroke();
+}
+
+// Ensure DOM is ready before rendering
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    const themeBtn = document.getElementById('theme-toggle');
+    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+    renderBlindTable();
+    renderChipCfg();
+    renderChipStacks();
+  });
+} else {
+  initTheme();
+  const themeBtn = document.getElementById('theme-toggle');
+  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+  renderBlindTable();
+  renderChipCfg();
+  renderChipStacks();
+}
+
+// Ensure settings tab is visible on load
+switchTab('settings');
+</script>
+</body>
+</html>
