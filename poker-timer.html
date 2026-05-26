@@ -437,6 +437,7 @@ input[type="range"].chip-slider { width: 80px; accent-color: var(--gold); cursor
         <input type="number" id="s-startblind" value="10" min="1" onchange="onSettingInput()">
       </div>
     </div>
+    <div id="blind-compat-warning" style="display:none; margin: -8px 0 16px; padding: 8px 12px; background: var(--card); border: 1px solid var(--orange); border-radius: 4px; color: var(--orange); font-size: 0.82em; letter-spacing: 0.5px;"></div>
 
     <div class="toggle-row">
       <span>Breaks</span>
@@ -785,8 +786,24 @@ function syncDOM() {
   $('break-sub').style.display = S.breaksOn ? '' : 'none';
 }
 
+function checkBlindCompatibility() {
+  const warn = $('blind-compat-warning');
+  if (!warn) return;
+  const denom = S.smallestDenom || 1;
+  const blind = S.startBlind || 1;
+  if (blind % denom !== 0) {
+    const lo = Math.floor(blind / denom) * denom || denom;
+    const hi = lo + denom;
+    warn.textContent = '⚠ Starting Small Blind (' + blind + ') is not a multiple of Smallest Chip (' + denom + '). Nearest valid values: ' + lo + ' or ' + hi + '.';
+    warn.style.display = '';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+
 function onSettingInput() {
   readSettingsFromDOM();
+  checkBlindCompatibility();
   recalcStartTimes();
   renderBlindTable();
 }
