@@ -807,7 +807,9 @@ function generateBlinds() {
   // Scale values based on Starting Small Blind setting
   const baseVals = [10, 20, 30, 50, 75, 100, 150, 200, 300, 500, 600, 800, 1000];
   const scale = S.startBlind / 10;
-  const sbVals = baseVals.map(v => Math.round(v * scale));
+  const denom = S.smallestDenom || 1;
+  // Round each value to nearest multiple of smallest chip denomination
+  const sbVals = baseVals.map(v => Math.max(denom, Math.round(v * scale / denom) * denom));
 
   const sched = [];
   let levelNum = 1, totalMin = 0;
