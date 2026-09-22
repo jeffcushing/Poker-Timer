@@ -885,9 +885,13 @@ function renderBlindTable() {
       c0.textContent = 'Break — ' + item.duration + ' min';
       var c1 = tr.insertCell(1); c1.textContent = fmtMin(item.startMin);
       var c2 = tr.insertCell(2);
+      var mu = document.createElement('button'); mu.className = 'del-btn'; mu.textContent = '▲'; mu.title = 'Move up';
+      (function(idx){ mu.onclick = function(){ moveRow(idx, -1); }; })(i);
+      var md = document.createElement('button'); md.className = 'del-btn'; md.textContent = '▼'; md.title = 'Move down';
+      (function(idx){ md.onclick = function(){ moveRow(idx, 1); }; })(i);
       var db = document.createElement('button'); db.className = 'del-btn'; db.textContent = '✕';
       (function(idx){ db.onclick = function(){ delRow(idx); }; })(i);
-      c2.appendChild(db);
+      c2.appendChild(mu); c2.appendChild(md); c2.appendChild(db);
     } else {
       var c0 = tr.insertCell(0); c0.textContent = String(item.level);
       var c1 = tr.insertCell(1);
@@ -913,6 +917,13 @@ function renderBlindTable() {
 
 function delRow(i) {
   S.schedule.splice(i, 1);
+  renumberLevels(); recalcStartTimes(); renderBlindTable();
+}
+
+function moveRow(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= S.schedule.length) return;
+  const tmp = S.schedule[i]; S.schedule[i] = S.schedule[j]; S.schedule[j] = tmp;
   renumberLevels(); recalcStartTimes(); renderBlindTable();
 }
 
@@ -953,12 +964,11 @@ function renderChipCfg() {
     const idx = S.chips.indexOf(chip);
     const row = document.createElement('div');
     row.className = 'chip-cfg-row';
-    const isFixed = chip.fixed;
     row.innerHTML = `
       <div class="swatch" style="background:${chip.color};"></div>
-      ${isFixed ? '<label>'+chip.name+'</label>' : '<input type="text" value="'+chip.name+'" onchange="S.chips['+idx+'].name=this.value; renderChipStacks();">'}
+      <input type="text" value="${chip.name}" onchange="S.chips[${idx}].name=this.value; renderChipStacks();">
       <label>Value</label>
-      <input type="number" value="${chip.value}" min="1" ${isFixed ? 'disabled' : ''}
+      <input type="number" value="${chip.value}" min="1"
              onchange="S.chips[${idx}].value=+this.value; renderChipCfg(); renderChipStacks();">
       <label class="switch" title="Enable" style="margin-left: auto;">
         <input type="checkbox" ${chip.on ? 'checked' : ''}
