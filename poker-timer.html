@@ -1211,7 +1211,8 @@ function contrastColor(hex) {
 let T = {
   running: false, paused: false,
   idx: 0, prevIdx: -1, timeLeft: 0, totalTime: 0,
-  iv: null, audioCtx: null, colorUpMap: null // Built at tournament start
+  iv: null, audioCtx: null, colorUpMap: null,
+  oneMinSpoken: false, announceNextLevel: false
 };
 
 function startTimer() {
@@ -1231,6 +1232,7 @@ function loadLevel() {
 
   const goingForward = T.idx > T.prevIdx;
   T.prevIdx = T.idx;
+  T.oneMinSpoken = false;
 
   if (item.type === 'break') {
     T.totalTime = item.duration * 60;
@@ -1265,7 +1267,14 @@ function loadLevel() {
     }
 
     renderChipReminder(T.idx);
+
+    if (T.announceNextLevel) {
+      const sbStr = item.sb.toLocaleString();
+      const bbStr = item.bb.toLocaleString();
+      setTimeout(() => speak(`The new blinds are ${sbStr} and ${bbStr}.`), 600);
+    }
   }
+  T.announceNextLevel = false;
   updateDisplay();
   renderSchedPreview();
 }
@@ -1274,9 +1283,14 @@ function tick() {
   if (T.paused || !T.running) return;
   T.timeLeft--;
   updateDisplay();
+  if (T.timeLeft === 60 && !T.oneMinSpoken) {
+    T.oneMinSpoken = true;
+    speak('One minute remains in this round.');
+  }
   if (T.timeLeft <= 0) {
     playAlarm();
     T.idx++;
+    T.announceNextLevel = true;
     if (T.idx >= S.schedule.length) { setTimeout(endTournament, 1200); }
     else { setTimeout(loadLevel, 1200); }
   }
@@ -1441,7 +1455,7 @@ function endTournament() {
 }
 
 function resetTimer() {
-  T = { running:false, paused:false, idx:0, prevIdx:-1, timeLeft:0, totalTime:0, iv:null, audioCtx:T.audioCtx, colorUpMap:null };
+  T = { running:false, paused:false, idx:0, prevIdx:-1, timeLeft:0, totalTime:0, iv:null, audioCtx:T.audioCtx, colorUpMap:null, oneMinSpoken:false, announceNextLevel:false };
   show('timer-done', false);
   show('timer-active', false);
   show('timer-ready', true);
@@ -1463,6 +1477,29 @@ function renderSchedPreview() {
     if (cls !== 'cur' && T.running) tr.onclick = () => jumpToLevel(i);
     tbody.appendChild(tr);
   });
+}
+
+// ═══════════════════════════════════════════════════════
+//  SPEECH
+// ═══════════════════════════════════════════════════════
+let _ttsVoices = [];
+if (window.speechSynthesis) {
+  const _loadVoices = () => { _ttsVoices = speechSynthesis.getVoices(); };
+  speechSynthesis.onvoiceschanged = _loadVoices;
+  _loadVoices();
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  const voices = _ttsVoices.length ? _ttsVoices : speechSynthesis.getVoices();
+  // Prefer a named female English voice, fall back to any English voice
+  const female = voices.find(v => /samantha|karen|victoria|moira|tessa|fiona|allison|ava|susan|zoe|alice/i.test(v.name))
+              || voices.find(v => /en[-_]/i.test(v.lang));
+  if (female) utt.voice = female;
+  utt.rate = 0.9;
+  speechSynthesis.speak(utt);
 }
 
 // ═══════════════════════════════════════════════════════
