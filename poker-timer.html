@@ -736,7 +736,7 @@ function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 // ═══════════════════════════════════════════════════════
 function saveAll() {
   readSettingsFromDOM();
-  localStorage.setItem('pt_v2', JSON.stringify(S));
+  try { localStorage.setItem('pt_v2', JSON.stringify(S)); } catch(e) {}
   toast('Settings saved');
 }
 
@@ -1245,6 +1245,9 @@ function loadLevel() {
     $('level-badge').textContent = '☕ BREAK';
     $('break-msg').textContent = `${item.duration} minute break — next blinds incoming`;
     $('chip-reminder').innerHTML = '';
+    if (T.announceNextLevel) {
+      setTimeout(() => speak(`Break time. You have ${item.duration} minutes.`), 600);
+    }
   } else {
     const levelRoundLength = item.roundLength !== undefined ? item.roundLength : S.roundLength;
     T.totalTime = levelRoundLength * 60;
@@ -1274,7 +1277,9 @@ function loadLevel() {
     if (T.announceNextLevel) {
       const sbStr = item.sb.toLocaleString();
       const bbStr = item.bb.toLocaleString();
-      setTimeout(() => speak(`The new blinds are ${sbStr} and ${bbStr}.`), 600);
+      const prevItem = T.idx > 0 ? S.schedule[T.idx - 1] : null;
+      const prefix = (prevItem && prevItem.type === 'break') ? 'Break is over. ' : '';
+      setTimeout(() => speak(`${prefix}The new blinds are ${sbStr} and ${bbStr}.`), 600);
     }
   }
   T.announceNextLevel = false;
@@ -1596,7 +1601,7 @@ function toggleTheme() {
   const currentTheme = html.getAttribute('data-theme') || 'dark';
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
   html.setAttribute('data-theme', newTheme);
-  localStorage.setItem('pt_theme', newTheme);
+  try { localStorage.setItem('pt_theme', newTheme); } catch(e) {}
   updateThemeButton();
   updateHourglassStroke();
 }
@@ -1612,7 +1617,7 @@ function updateThemeButton() {
 
 function initTheme() {
   const html = document.documentElement;
-  const saved = localStorage.getItem('pt_theme') || 'dark';
+  let saved = 'dark'; try { saved = localStorage.getItem('pt_theme') || 'dark'; } catch(e) {}
   html.setAttribute('data-theme', saved);
   updateThemeButton();
   updateHourglassStroke();
