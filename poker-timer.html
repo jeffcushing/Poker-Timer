@@ -696,6 +696,9 @@ input[type="range"].chip-slider { width: 80px; accent-color: var(--gold); cursor
 // IMPROVED: Timer font size 7.5em, hourglass right of timer on desktop, larger (140x340)
 // PREVIOUS: Timer tab reordered (timer/hourglass at top), per-level round length overrides
 window.onerror = function(msg, src, line) {
+  // "Script error." at line 0 is a browser-sanitized cross-origin event
+  // (e.g. AirPlay, extensions) — not an app error, safe to ignore.
+  if (msg === 'Script error.' && line === 0) return;
   var d = document.getElementById('js-error-banner');
   if (!d) { d = document.createElement('div'); d.id='js-error-banner'; d.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#c0392b;color:#fff;padding:8px 12px;z-index:9999;font-size:11px;font-family:monospace;'; document.body.appendChild(d); }
   d.textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
