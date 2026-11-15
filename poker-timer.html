@@ -206,6 +206,14 @@ h1 {
 .chip-count-input:focus { outline: none; border-color: var(--gold-dim); }
 .chip-subtotal { color: var(--muted); font-size: 0.78em; }
 input[type="range"].chip-slider { width: 80px; accent-color: var(--gold); cursor: pointer; }
+.chip-lock-btn {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-size: 0.85em; opacity: 0.35; transition: opacity 0.15s;
+  line-height: 1; color: var(--text);
+}
+.chip-lock-btn.is-locked { opacity: 1; color: var(--gold); }
+.chip-lock-btn:hover { opacity: 0.8; }
+.chip-count-input.is-locked { border-color: var(--gold-dim); }
 
 .chip-total-bar {
   text-align: center; padding: 10px; font-size: 0.88em;
@@ -719,11 +727,11 @@ const DEFAULT_STATE = {
   colorUpPauseOn: true,
   schedule: [],   // [{type:'level', level:N, sb:X, bb:Y, startMin:M} | {type:'break', duration:M, startMin:M}]
   chips: [
-    { name:'White', color:'#d0d0d0', value:10,   count:20, on:true, fixed:true },
-    { name:'Red',   color:'#c0392b', value:25,   count:12, on:true, fixed:true },
-    { name:'Blue',  color:'#2471a3', value:100,  count:5,  on:true, fixed:true },
-    { name:'Green', color:'#1e8449', value:250,  count:0,  on:false, fixed:true },
-    { name:'Black', color:'#2c2c2c', value:500,  count:2,  on:true, fixed:true },
+    { name:'White', color:'#d0d0d0', value:10,   count:20, on:true, fixed:true, locked:false },
+    { name:'Red',   color:'#c0392b', value:25,   count:12, on:true, fixed:true, locked:false },
+    { name:'Blue',  color:'#2471a3', value:100,  count:5,  on:true, fixed:true, locked:false },
+    { name:'Green', color:'#1e8449', value:250,  count:0,  on:false, fixed:true, locked:false },
+    { name:'Black', color:'#2c2c2c', value:500,  count:2,  on:true, fixed:true, locked:false },
   ]
 };
 
@@ -1021,7 +1029,9 @@ function renderChipStacks() {
   const total = chipTotal();
   const bar = $('chip-total-bar');
   const ok = total === target;
-  bar.innerHTML = `Stack total: <span class="${ok?'ok':'bad'}">${total.toLocaleString()}</span> &nbsp;/&nbsp; Target: ${target.toLocaleString()}${ok?' &#10003;':''}`;
+  const anyLocked = chips.some(c => c.locked);
+  bar.innerHTML = `Stack total: <span class="${ok?'ok':'bad'}">${total.toLocaleString()}</span> &nbsp;/&nbsp; Target: ${target.toLocaleString()}${ok?' &#10003;':''}`
+    + (anyLocked ? ' &nbsp;<button class="btn" style="font-size:0.78em;padding:3px 10px;" onclick="unlockAllChips()">Unlock All</button>' : '');
 
   const row = $('chips-row');
   row.innerHTML = '';
@@ -1033,12 +1043,12 @@ function renderChipStacks() {
     col.innerHTML = `
       <div class="chip-col-label">${chip.name}</div>
       <canvas width="70" height="120" id="stk-${chip.value}"></canvas>
-      <input type="number" class="chip-count-input" id="cnt-${chip.value}" value="${chip.count}" min="0"
+      <input type="number" class="chip-count-input${chip.locked?' is-locked':''}" id="cnt-${chip.value}" value="${chip.count}" min="0"
              onchange="onCountInput(${chip.value}, +this.value)">
       <div class="chip-subtotal" id="sub-${chip.value}">= ${(chip.count*chip.value).toLocaleString()}</div>
       <input type="range" class="chip-slider" id="sldr-${chip.value}" min="0" max="${maxSlider}" step="1" value="${chip.count}"
              oninput="onSlider(${chip.value}, +this.value)">
-      <div style="color:var(--muted);font-size:0.75em;">${chip.value >= 1000 ? (chip.value/1000)+'K' : chip.value} each</div>
+      <button class="chip-lock-btn${chip.locked?' is-locked':''}" id="lck-${chip.value}" title="${chip.locked?'Unlock':'Lock'}" onclick="toggleChipLock(${chip.value})">${chip.locked?'🔒':'🔓'}</button>
     `;
     row.appendChild(col);
     drawStack(chip);
@@ -1103,13 +1113,16 @@ function drawStack(chip) {
   }
 }
 
+let _chipDebounce = null;
+
 function onSlider(chipValue, newCount) {
   const chips = enabledChips();
   const chip = chips.find(c => c.value === chipValue);
   if (!chip) return;
   chip.count = newCount;
-  // No auto-redistribution — same free-form behaviour as the count inputs.
+  chip.locked = true;
   refreshChipUI(chips);
+  scheduleRedistribute();
 }
 
 function onCountInput(chipValue, newCount) {
@@ -1118,23 +1131,74 @@ function onCountInput(chipValue, newCount) {
   const chip = chips.find(c => c.value === chipValue);
   if (!chip) return;
   chip.count = newCount;
-  // No auto-redistribution — let the user set each chip freely.
-  // The total bar shows green when the stack hits the target.
+  chip.locked = true;
   refreshChipUI(chips);
+  scheduleRedistribute();
+}
+
+function scheduleRedistribute() {
+  clearTimeout(_chipDebounce);
+  _chipDebounce = setTimeout(() => {
+    const chips = enabledChips();
+    redistributeUnlocked(chips);
+    refreshChipUI(chips);
+  }, 400);
+}
+
+function redistributeUnlocked(chips) {
+  const target = S.startingChips;
+  const locked = chips.filter(c => c.locked);
+  const unlocked = chips.filter(c => !c.locked).sort((a, b) => b.value - a.value);
+  if (unlocked.length === 0) return;
+  const lockedTotal = locked.reduce((s, c) => s + c.count * c.value, 0);
+  let remaining = target - lockedTotal;
+  if (remaining <= 0) { unlocked.forEach(c => c.count = 0); return; }
+  unlocked.forEach((chip, i) => {
+    if (i < unlocked.length - 1) {
+      const share = Math.floor(remaining * 0.5 / chip.value) * chip.value;
+      chip.count = share / chip.value;
+      remaining -= share;
+    } else {
+      chip.count = remaining > 0 ? Math.round(remaining / chip.value) : 0;
+    }
+  });
+}
+
+function toggleChipLock(chipValue) {
+  const chip = S.chips.find(c => c.value === chipValue);
+  if (!chip) return;
+  chip.locked = !chip.locked;
+  if (!chip.locked) {
+    // Unlocking: immediately redistribute so the stack re-balances
+    const chips = enabledChips();
+    redistributeUnlocked(chips);
+    refreshChipUI(chips);
+  } else {
+    refreshChipUI(enabledChips());
+  }
+}
+
+function unlockAllChips() {
+  S.chips.forEach(c => c.locked = false);
+  renderChipStacks();
 }
 
 function refreshChipUI(chips) {
   const target = S.startingChips;
   const total = chips.reduce((s, c) => s + c.count * c.value, 0);
   const ok = total === target;
-  $('chip-total-bar').innerHTML = `Stack total: <span class="${ok?'ok':'bad'}">${total.toLocaleString()}</span> &nbsp;/&nbsp; Target: ${target.toLocaleString()}${ok?' &#10003;':' (adjust sliders to match)'}`;
+  const anyLocked = chips.some(c => c.locked);
+  $('chip-total-bar').innerHTML = `Stack total: <span class="${ok?'ok':'bad'}">${total.toLocaleString()}</span> &nbsp;/&nbsp; Target: ${target.toLocaleString()}${ok?' &#10003;':''}`
+    + (anyLocked ? ' &nbsp;<button class="btn" style="font-size:0.78em;padding:3px 10px;" onclick="unlockAllChips()">Unlock All</button>' : '');
   chips.forEach(chip => {
     const cntEl  = $('cnt-'  + chip.value);
     const subEl  = $('sub-'  + chip.value);
     const sldrEl = $('sldr-' + chip.value);
-    if (cntEl)  cntEl.value       = chip.count;
+    const lckEl  = $('lck-'  + chip.value);
+    if (cntEl)  { cntEl.value = chip.count; cntEl.className = 'chip-count-input' + (chip.locked ? ' is-locked' : ''); }
     if (subEl)  subEl.textContent = '= ' + (chip.count * chip.value).toLocaleString();
-    if (sldrEl) sldrEl.value      = chip.count;
+    if (sldrEl) sldrEl.value = chip.count;
+    if (lckEl)  { lckEl.className = 'chip-lock-btn' + (chip.locked ? ' is-locked' : ''); lckEl.textContent = chip.locked ? '🔒' : '🔓'; lckEl.title = chip.locked ? 'Unlock' : 'Lock'; }
     drawStack(chip);
   });
 }
@@ -1160,6 +1224,7 @@ function optimizeChips() {
 }
 
 function resetToOptimal() {
+  S.chips.forEach(c => c.locked = false);
   optimizeChips();
   renderChipStacks();
   toast('Reset to optimal allocation');
