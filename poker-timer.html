@@ -1338,7 +1338,7 @@ function loadLevel() {
     $('t-sb').textContent = item.sb.toLocaleString();
     $('t-bb').textContent = item.bb.toLocaleString();
 
-    // Color-up detection: chips newly requiring color-up at THIS exact level
+    let colorUpPhrase = '';
     if (goingForward && T.running && T.colorUpMap) {
       // Any color-up point passed since the last loaded index (handles skipping over it)
       const newColorUps = enabledChips().filter(c => {
@@ -1353,18 +1353,22 @@ function loadLevel() {
         }
         const names = newColorUps.map(c => c.name).join(' + ');
         toast(`🎰 Color Up: ${names}`);
+        const spoken = newColorUps.map(c => c.name).join(' and ');
+        colorUpPhrase = `Time to color up the ${spoken} chips.` + (S.colorUpPauseOn ? ' The timer is paused.' : '');
       }
     }
 
     renderChipReminder(T.idx);
 
+    // One combined utterance — speak() cancels any in-progress speech
+    const parts = [];
     if (T.announceNextLevel) {
-      const sbStr = item.sb.toLocaleString();
-      const bbStr = item.bb.toLocaleString();
       const prevItem = T.idx > 0 ? S.schedule[T.idx - 1] : null;
-      const prefix = (prevItem && prevItem.type === 'break') ? 'Break is over. ' : '';
-      setTimeout(() => speak(`${prefix}The new blinds are ${sbStr} and ${bbStr}.`), 600);
+      if (prevItem && prevItem.type === 'break') parts.push('Break is over.');
+      parts.push(`The new blinds are ${item.sb.toLocaleString()} and ${item.bb.toLocaleString()}.`);
     }
+    if (colorUpPhrase) parts.push(colorUpPhrase);
+    if (parts.length) setTimeout(() => speak(parts.join(' ')), colorUpPhrase ? 1100 : 600);
   }
   T.announceNextLevel = false;
   updateDisplay();
