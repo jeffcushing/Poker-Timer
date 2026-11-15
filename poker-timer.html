@@ -214,6 +214,11 @@ input[type="range"].chip-slider { width: 80px; accent-color: var(--gold); cursor
 .chip-lock-btn.is-locked { opacity: 1; color: var(--gold); }
 .chip-lock-btn:hover { opacity: 0.8; }
 .chip-count-input.is-locked { border-color: var(--gold-dim); }
+.voice-select {
+  background: var(--card); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); padding: 6px 8px; font-family: Georgia, serif; font-size: 0.9em;
+  flex: 1; min-width: 0; max-width: 320px;
+}
 
 .chip-total-bar {
   text-align: center; padding: 10px; font-size: 0.88em;
@@ -475,6 +480,12 @@ input[type="range"].chip-slider { width: 80px; accent-color: var(--gold); cursor
       <span style="color:var(--muted);font-size:0.78em;margin-left:4px;">— pause &amp; alarm when chips color up</span>
     </div>
 
+    <div class="toggle-row">
+      <span>Announcer Voice</span>
+      <select id="s-voice" class="voice-select" onchange="S.voiceName=this.value"></select>
+      <button class="btn" style="padding:5px 12px;" onclick="testVoice()">▶ Test</button>
+    </div>
+
     <div class="section-title">Blind Structure</div>
     <table class="blind-table">
       <thead>
@@ -725,6 +736,7 @@ const DEFAULT_STATE = {
   breakEvery: 5,
   breakLength: 8,
   colorUpPauseOn: true,
+  voiceName: '',
   schedule: [],   // [{type:'level', level:N, sb:X, bb:Y, startMin:M} | {type:'break', duration:M, startMin:M}]
   chips: [
     { name:'White', color:'#d0d0d0', value:10,   count:20, on:true, fixed:true, locked:false },
@@ -795,6 +807,7 @@ function syncDOM() {
   $('s-breaklen').value   = S.breakLength;
   $('s-colorup').checked  = S.colorUpPauseOn !== false;
   $('break-sub').style.display = S.breaksOn ? '' : 'none';
+  populateVoiceSelect();
 }
 
 function checkBlindCompatibility() {
@@ -1581,11 +1594,67 @@ function renderSchedPreview() {
 // ═══════════════════════════════════════════════════════
 //  SPEECH
 // ═══════════════════════════════════════════════════════
+const ACCENTS = {
+  'en-GB':'British', 'en-AU':'Australian', 'en-US':'American', 'en-IE':'Irish',
+  'en-IN':'Indian', 'en-ZA':'South African', 'en-NZ':'New Zealand', 'en-CA':'Canadian',
+  'en-SC':'Scottish', 'en-GB-SCOTLAND':'Scottish', 'en-SG':'Singaporean'
+};
+// macOS ships joke/effect voices that make poor announcers
+const NOVELTY_VOICES = /^(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|deranged|hysterical|pipe organ)\b/i;
+
 let _ttsVoices = [];
+function englishVoices() {
+  return _ttsVoices.filter(v => /^en[-_]/i.test(v.lang) && !NOVELTY_VOICES.test(v.name));
+}
+function accentOf(v) {
+  const lang = v.lang.replace('_', '-').toUpperCase().replace(/^EN/, 'en');
+  return ACCENTS[lang] || ACCENTS[lang.slice(0, 5)] || lang;
+}
+
+function populateVoiceSelect() {
+  const sel = $('s-voice');
+  if (!sel) return;
+  const groups = {};
+  englishVoices().forEach(v => (groups[accentOf(v)] = groups[accentOf(v)] || []).push(v));
+  sel.innerHTML = '<option value="">Auto (female, default)</option>';
+  Object.keys(groups).sort().forEach(accent => {
+    const og = document.createElement('optgroup');
+    og.label = accent;
+    groups[accent].sort((a, b) => (isNatural(b) - isNatural(a)) || a.name.localeCompare(b.name)).forEach(v => {
+      const o = document.createElement('option');
+      o.value = v.name;
+      const label = v.name.replace(/^Microsoft\s+/, '').replace(/\s+Online\s*\(Natural\)/, ' (Natural)')
+                          .replace(/\s*-\s*English.*$/, '').replace(/\s*\(English.*\)$/, '');
+      o.textContent = (isNatural(v) ? '★ ' : '') + label;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+  // Saved voice may not exist on this device; fall back to Auto
+  sel.value = englishVoices().some(v => v.name === S.voiceName) ? S.voiceName : '';
+}
+
 if (window.speechSynthesis) {
-  const _loadVoices = () => { _ttsVoices = speechSynthesis.getVoices(); };
+  const _loadVoices = () => { _ttsVoices = speechSynthesis.getVoices(); populateVoiceSelect(); };
   speechSynthesis.onvoiceschanged = _loadVoices;
   _loadVoices();
+}
+
+// Higher-quality voices: Apple Premium/Enhanced downloads, Edge neural "Natural", Google network voices
+function isNatural(v) { return /premium|enhanced|natural|neural|^google/i.test(v.name); }
+
+const FEMALE_NAMES = /samantha|karen|victoria|moira|tessa|fiona|allison|ava|susan|zoe|alice|serena|kate|libby|sonia|natasha|aria|jenny|female/i;
+function pickVoice() {
+  const voices = englishVoices();
+  return voices.find(v => v.name === S.voiceName)
+      || voices.find(v => isNatural(v) && FEMALE_NAMES.test(v.name))
+      || voices.find(v => FEMALE_NAMES.test(v.name))
+      || voices[0];
+}
+
+function testVoice() {
+  unlockSpeech();
+  speak('The new blinds are 100 and 200.');
 }
 
 // Safari/iOS only allow speech that was first started inside a user gesture;
@@ -1603,11 +1672,9 @@ function speak(text) {
   speechSynthesis.resume(); // Chrome can get stuck in a paused state
   const utt = new SpeechSynthesisUtterance(text);
   _currentUtt = utt;
-  const voices = _ttsVoices.length ? _ttsVoices : speechSynthesis.getVoices();
-  // Prefer a named female English voice, fall back to any English voice
-  const female = voices.find(v => /samantha|karen|victoria|moira|tessa|fiona|allison|ava|susan|zoe|alice/i.test(v.name))
-              || voices.find(v => /en[-_]/i.test(v.lang));
-  if (female) utt.voice = female;
+  if (!_ttsVoices.length) _ttsVoices = speechSynthesis.getVoices();
+  const voice = pickVoice();
+  if (voice) utt.voice = voice;
   utt.rate = 0.9;
   speechSynthesis.speak(utt);
 }
