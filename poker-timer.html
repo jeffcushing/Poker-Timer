@@ -1296,6 +1296,7 @@ let T = {
 };
 
 function startTimer() {
+  unlockSpeech();
   readSettingsFromDOM();
   if (!S.schedule.length) S.schedule = generateBlinds();
   T.idx = 0; T.prevIdx = -1; T.running = true; T.paused = false;
@@ -1507,6 +1508,7 @@ function updatePauseBtn() {
 }
 
 function togglePause() {
+  unlockSpeech();
   T.paused = !T.paused;
 
   // If resuming from color-up pause, immediately remove colored-up chips from play
@@ -1586,10 +1588,21 @@ if (window.speechSynthesis) {
   _loadVoices();
 }
 
+// Safari/iOS only allow speech that was first started inside a user gesture;
+// call this from a click handler so later timer-driven announcements work.
+function unlockSpeech() {
+  if (!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  speechSynthesis.speak(u);
+}
+
+let _currentUtt = null; // hold a reference — Chrome can garbage-collect and silence it
 function speak(text) {
   if (!window.speechSynthesis) return;
-  speechSynthesis.cancel();
+  speechSynthesis.resume(); // Chrome can get stuck in a paused state
   const utt = new SpeechSynthesisUtterance(text);
+  _currentUtt = utt;
   const voices = _ttsVoices.length ? _ttsVoices : speechSynthesis.getVoices();
   // Prefer a named female English voice, fall back to any English voice
   const female = voices.find(v => /samantha|karen|victoria|moira|tessa|fiona|allison|ava|susan|zoe|alice/i.test(v.name))
