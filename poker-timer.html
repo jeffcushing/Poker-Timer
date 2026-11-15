@@ -833,11 +833,22 @@ function onBreakToggle() {
 function generateBlinds() {
   // Default blind schedule matching standard tournament progression
   // Scale values based on Starting Small Blind setting
-  const baseVals = [10, 20, 30, 50, 75, 100, 150, 200, 300, 500, 600, 800, 1000];
+  const LEVELS = 13;
+  const baseVals = [10, 20, 30, 50, 75, 100, 150, 200, 300, 400, 500, 600, 800, 1000,
+                    1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000];
   const scale = S.startBlind / 10;
-  const denom = S.smallestDenom || 1;
-  // Round each value to nearest multiple of smallest chip denomination
-  const sbVals = baseVals.map(v => Math.max(denom, Math.round(v * scale / denom) * denom));
+  const chipVals = enabledChips().map(c => c.value).sort((a, b) => a - b);
+  // `unit` is the smallest chip still in play. Once the small blind is a multiple
+  // of a larger chip, lower chips are colored up and never reintroduced.
+  let unit = S.smallestDenom || 1;
+  const sbVals = [];
+  for (const v of baseVals) {
+    if (sbVals.length >= LEVELS) break;
+    const sb = Math.max(unit, Math.round(v * scale / unit) * unit);
+    if (sbVals.length && sb <= sbVals[sbVals.length - 1]) continue;
+    sbVals.push(sb);
+    for (const c of chipVals) if (c > unit && sb % c === 0) unit = c;
+  }
 
   const sched = [];
   let levelNum = 1, totalMin = 0;
