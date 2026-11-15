@@ -1021,7 +1021,7 @@ function renderChipStacks() {
   const total = chipTotal();
   const bar = $('chip-total-bar');
   const ok = total === target;
-  bar.innerHTML = `Stack total: <span class="${ok?'ok':'bad'}">${total.toLocaleString()}</span> &nbsp;/&nbsp; Target: ${target.toLocaleString()}${ok?' &#10003;':' (adjust sliders to match)'}`;
+  bar.innerHTML = `Stack total: <span class="${ok?'ok':'bad'}">${total.toLocaleString()}</span> &nbsp;/&nbsp; Target: ${target.toLocaleString()}${ok?' &#10003;':''}`;
 
   const row = $('chips-row');
   row.innerHTML = '';
@@ -1108,7 +1108,7 @@ function onSlider(chipValue, newCount) {
   const chip = chips.find(c => c.value === chipValue);
   if (!chip) return;
   chip.count = newCount;
-  redistributeOthers(chip, chips);
+  // No auto-redistribution — same free-form behaviour as the count inputs.
   refreshChipUI(chips);
 }
 
