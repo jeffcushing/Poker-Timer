@@ -1296,10 +1296,13 @@ function startTimer() {
 }
 
 function loadLevel() {
+  clearTimeout(T.advanceTimer);
+  T.advanceTimer = null;
   const item = S.schedule[T.idx];
   if (!item) { endTournament(); return; }
 
-  const goingForward = T.idx > T.prevIdx;
+  const fromIdx = T.prevIdx;
+  const goingForward = T.idx > fromIdx;
   T.prevIdx = T.idx;
   T.oneMinSpoken = false;
 
@@ -1326,7 +1329,11 @@ function loadLevel() {
 
     // Color-up detection: chips newly requiring color-up at THIS exact level
     if (goingForward && T.running && T.colorUpMap) {
-      const newColorUps = enabledChips().filter(c => T.colorUpMap.get(c.value) === T.idx);
+      // Any color-up point passed since the last loaded index (handles skipping over it)
+      const newColorUps = enabledChips().filter(c => {
+        const at = T.colorUpMap.get(c.value);
+        return at !== undefined && at > fromIdx && at <= T.idx;
+      });
       if (newColorUps.length > 0) {
         playColorUpAlarm();
         if (S.colorUpPauseOn) {
@@ -1354,7 +1361,7 @@ function loadLevel() {
 }
 
 function tick() {
-  if (T.paused || !T.running) return;
+  if (T.paused || !T.running || T.advanceTimer) return;
   T.timeLeft--;
   updateDisplay();
   if (T.timeLeft === 60 && !T.oneMinSpoken) {
@@ -1365,8 +1372,7 @@ function tick() {
     playAlarm();
     T.idx++;
     T.announceNextLevel = true;
-    if (T.idx >= S.schedule.length) { setTimeout(endTournament, 1200); }
-    else { setTimeout(loadLevel, 1200); }
+    T.advanceTimer = setTimeout(T.idx >= S.schedule.length ? endTournament : loadLevel, 1200);
   }
 }
 
@@ -1493,7 +1499,8 @@ function togglePause() {
     const schedule = S.schedule[T.idx];
     if (schedule && schedule.type === 'level') {
       S.chips.forEach(chip => {
-        if (chip.on && T.colorUpMap.get(chip.value) === T.idx) {
+        const at = T.colorUpMap.get(chip.value);
+        if (chip.on && at !== undefined && at <= T.idx) {
           chip.on = false; // Disable from play
         }
       });
@@ -1523,13 +1530,14 @@ function jumpToLevel(idx) {
 }
 
 function endTournament() {
-  clearInterval(T.iv); T.running = false;
+  clearInterval(T.iv); clearTimeout(T.advanceTimer); T.advanceTimer = null; T.running = false;
   show('timer-active', false);
   show('timer-done', true);
 }
 
 function resetTimer() {
-  T = { running:false, paused:false, idx:0, prevIdx:-1, timeLeft:0, totalTime:0, iv:null, audioCtx:T.audioCtx, colorUpMap:null, oneMinSpoken:false, announceNextLevel:false };
+  clearTimeout(T.advanceTimer);
+  T = { running:false, paused:false, idx:0, prevIdx:-1, timeLeft:0, totalTime:0, iv:null, audioCtx:T.audioCtx, colorUpMap:null, oneMinSpoken:false, announceNextLevel:false, advanceTimer:null };
   show('timer-done', false);
   show('timer-active', false);
   show('timer-ready', true);
