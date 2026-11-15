@@ -1118,7 +1118,8 @@ function onCountInput(chipValue, newCount) {
   const chip = chips.find(c => c.value === chipValue);
   if (!chip) return;
   chip.count = newCount;
-  redistributeOthers(chip, chips);
+  // No auto-redistribution — let the user set each chip freely.
+  // The total bar shows green when the stack hits the target.
   refreshChipUI(chips);
 }
 
